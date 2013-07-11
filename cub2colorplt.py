@@ -2,9 +2,14 @@
 # -*- coding: utf-8 -*-
 
 # cub2colorplt.py
+"""
+Takes input a single band cube and makes a 2d color plot with scalebar and colorbar.
+"""
 
 import os, re
 import pandas as pd
+import numpy as np
+import os.path
 
 from pysis import isis, CubeFile
 from pysis.labels import parse_file_label
@@ -13,29 +18,36 @@ from pysis.util.file_manipulation import ImageName, write_file_list
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.patches as mpatches
-import os.path
-from pysis import isis
-from pysis import CubeFile
-import pyfits
 
-GROUP_RE = re.compile(r'(Group.*End_Group)', re.DOTALL)
+# import pyfits
+import isistools # my module
 
-def make_scalebar():
+def get_scalebar_size(filename, image):
+    """
+    Scalebar_width must be in pixels for plotting.
+    Args: image filename, image object
+    Returns: scalebar width for plotting
+    example: mpp = 100, image width = 20 km, or 20000 m.
+    Thus image.samples = 200
+    """
     samples = image.samples
-    print image.samples, image.lines
-    # scalebar_width must be in pixels
-    # TODO: scalebar is broken now. 
-    # Just grab scale from label
-    scalebar_width = samples/5 # 100 pixels = 10 km
+    image_scale = isistools.get_pixel_scale(filename) # units = meter per pixel
+    image_width = samples * image_scale # units = meters
+    scalebar_width_pixels = int(samples/5) # units = pixels
+    if image_width > 3000:
+        scalebar_width_label = (image_width/1000)/5 # units = kilometers
+        units = 'km'
+    else:
+        scalebar_width_label = image_width/5 # units = meters
+        units = 'm'
+
+    return scalebar_width_pixels, scalebar_width_label, units
 
 
 def color_plot_2D(image, args):
-
-
 
     # An matplotlib.image.AxesImage instance is returned (plot1)
     # the 0 tells it to plot the first band only
@@ -51,24 +63,43 @@ def color_plot_2D(image, args):
     plot1.set_cmap('jet')
     plt.axis('off') # by turning the axis off, you make the grid disappear
 
-    # Draw a box
+    # Draw a box that will be the scalebar
     # this remains even after you turn the axes off
     xy = 0.75*image.samples, 0.90*image.lines # upper left hand corner location
-    width, height = scalebar_width, scalebar_width/4
-    ax.add_patch(mpatches.Rectangle(xy, width, height, facecolor="black",
-        edgecolor="white", linewidth=1))
+    width_pixels, width_label, units = get_scalebar_size(args.image, image)
+    width, height = width_pixels, width_pixels/4
+    ax.add_patch(mpatches.Rectangle(xy, 
+                                    width, 
+                                    height, 
+                                    facecolor="black",
+                                    edgecolor="white", 
+                                    linewidth=1
+                                    )
+    )
 
+    # Plot text that is the scalebar label
     text_x = xy[0] + width/2
     text_y = xy[1] + height/2
 
-    plt.text(text_x, text_y, str((scalebar_width*100)/1000) +' km', fontsize=10, rotation=0.,
-        horizontalalignment="center", verticalalignment="center", color='white',
-        bbox = dict(boxstyle="square", edgecolor='black', facecolor='black'))
+    plt.text(text_x, 
+            text_y, 
+            str(width_label) + units, 
+            fontsize=10, 
+            rotation=0.,
+            horizontalalignment="center", 
+            verticalalignment="center", 
+            color='white',
+            bbox = dict(boxstyle="square", 
+                        edgecolor='black', 
+                        facecolor='black'
+                    )
+    )
 
     plt.draw()
 
     plt.savefig(args.outname + '.png', dpi=300)
 
+    # TODO: make this a separate function
     if args.contours == True:
         print 'CONTOURS IN PROGRESS'
         print image.samples, image.lines
@@ -96,13 +127,13 @@ def color_plot_2D(image, args):
         plt.savefig(args.outname + '_contours.png', dpi=300)
     pass
 
+def main():
+
     parser = ArgumentParser(description='Create plots for topo data')
     parser.add_argument('image', metavar='cub',
                         help='the cube file(s) (.cub) to process, no NULL pixels')
     parser.add_argument('outname',
                         help='the output filename, no extension')
-    parser.add_argument('--type', '-t', default='2D',
-                       help='type of plot: 2D or 3D')
     parser.add_argument('--contours', '-c', default=True,
                        help='set to True for contour lines')
     parser.add_argument('--cinterval', '-i', default='10',
@@ -110,11 +141,10 @@ def color_plot_2D(image, args):
     args = parser.parse_args()
 
     img = CubeFile.open(args.image)
+
+    color_plot_2D(img, args)
     
-    if args.type == '2D':
-        color_plot_2D(img, args)
+if __name__ == '__main__':
+    main()
 
-    if args.type == '3D':
-        color_topo_3D(img, args)
-
-    img.data 
+     
