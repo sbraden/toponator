@@ -36,6 +36,7 @@ def get_scalebar_size(filename, image):
     """
     samples = image.samples
     image_scale = isistools.get_proj_pixel_scale(filename) # units = meter per pixel
+    print image_scale #debug
     image_width = samples * image_scale # units = meters
     scalebar_width_pixels = int(samples/5) # units = pixels
     if image_width > 3000:
