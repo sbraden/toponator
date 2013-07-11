@@ -41,12 +41,20 @@ def get_scalebar_size(filename, image):
     scalebar_width_pixels = int(samples/5) # units = pixels
     if image_width > 3000:
         scalebar_width_label = (image_width/1000)/5 # units = kilometers
-        units = 'km'
+        units = ' km'
     else:
         scalebar_width_label = image_width/5 # units = meters
-        units = 'm'
+        units = ' m'
 
     return scalebar_width_pixels, scalebar_width_label, units
+
+def make_colorbar(plotname, pixel_units):
+    """
+    Sets colorbar properties, colormap, and label
+    """
+    cbar = plt.colorbar(plot1, orientation="vertical")
+    plot1.set_cmap('jet')
+    cbar.set_label(pixel_units, fontsize=20)    
 
 
 def color_plot_2D(image, args):
@@ -57,12 +65,11 @@ def color_plot_2D(image, args):
     plot1 = plt.imshow(image_data)
     ax = plt.gca() # not sure what this does but it works
 
-    # color bar properties
-    cbar = plt.colorbar(plot1, orientation="vertical")
-    cbar.set_label('Elevation (m)', fontsize=20)
+    pixel_units = 'Standard deviation of slope'
+    #pixel_units = 'Slope (degrees)'
+    # pixel_units = 'Elevation (m)'
+    make_colorbar(plot1, pixel_units)
 
-    # Set the color map
-    plot1.set_cmap('jet')
     plt.axis('off') # by turning the axis off, you make the grid disappear
 
     # Draw a box that will be the scalebar
