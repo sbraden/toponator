@@ -52,8 +52,8 @@ def make_colorbar(plotname, pixel_units):
     """
     Sets colorbar properties, colormap, and label
     """
-    cbar = plt.colorbar(plot1, orientation="vertical")
-    plot1.set_cmap('jet')
+    cbar = plt.colorbar(plotname, orientation="vertical")
+    plotname.set_cmap('jet')
     cbar.set_label(pixel_units, fontsize=20)    
 
 
