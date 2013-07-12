@@ -56,18 +56,23 @@ def make_colorbar(plotname, pixel_units):
     plotname.set_cmap('jet')
     cbar.set_label(pixel_units, fontsize=20)    
 
+# TODO: create function to auto label corners with latitude and longitude
+
 
 def color_plot_2D(image, args):
 
+    # TODO: make dpi and argument
     # An matplotlib.image.AxesImage instance is returned (plot1)
     # the 0 tells it to plot the first band only
     image_data = image.apply_numpy_specials()[0].astype(np.float64)
     plot1 = plt.imshow(image_data)
+    output_filename = args.image[:-4] + '.png'
     ax = plt.gca() # not sure what this does but it works
 
-    pixel_units = 'Standard deviation of slope'
-    #pixel_units = 'Slope (degrees)'
-    # pixel_units = 'Elevation (m)'
+    pixel_units = args.units 
+    # 'Standard deviation of slope'
+    # 'Slope (degrees)'
+    # 'Elevation (m)'
     make_colorbar(plot1, pixel_units)
 
     plt.axis('off') # by turning the axis off, you make the grid disappear
@@ -106,7 +111,7 @@ def color_plot_2D(image, args):
 
     plt.draw()
 
-    plt.savefig(args.outname + '.png', dpi=300)
+    plt.savefig(output_filename, dpi=150)
 
     # TODO: make this a separate function
     if args.contours == True:
@@ -133,7 +138,7 @@ def color_plot_2D(image, args):
         #plt.clabel(contour1, fontsize=9, inline=1)
         plt.show()
         plt.axis('off')
-        plt.savefig(args.outname + '_contours.png', dpi=300)
+        plt.savefig(args.image[:-4] + '_contours.png', dpi=300)
     pass
 
 def main():
@@ -141,8 +146,8 @@ def main():
     parser = ArgumentParser(description='Create plots for topo data')
     parser.add_argument('image', metavar='cub',
                         help='the cube file(s) (.cub) to process, no NULL pixels')
-    parser.add_argument('outname',
-                        help='the output filename, no extension')
+    parser.add_argument('--units', '-u', default='Elevation (m)',
+                       help='Pixel units of the input image')
     parser.add_argument('--contours', '-c', default=True,
                        help='set to True for contour lines')
     parser.add_argument('--cinterval', '-i', default='10',
